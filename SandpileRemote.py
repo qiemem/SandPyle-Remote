@@ -34,4 +34,21 @@ class SandpileRemote:
         self.checkResult(self.s.recv(2048))
         self.tryRepaint()
 
+    def stabilize(self):
+        self.s.send("stabilize\n")
+        self.checkResult(self.s.recv(2048))
+        self.tryRepaint()
+
+    def deleteGraph(self):
+        self.s.send("delete_graph\n")
+        self.checkResult(self.s.recv(2048))
+
+    def clearSand(self):
+        self.s.send("clear_sand")
+        self.checkResult(self.s.recv(2048))
+
+    def getVertices(self):
+        self.s.send("get_vertices")
+        
+
 
