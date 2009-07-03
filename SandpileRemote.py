@@ -18,6 +18,7 @@ class SandpileRemote:
 
     def checkResult(self, result):
         if(result != "done\n"):
+            print(result)
             raise CommandError(result)
 
     def tryRepaint(self):
@@ -90,8 +91,8 @@ class SandpileRemote:
         self.checkResult(self.receive())
         self.tryRepaint()
 
-    def addVertex(self, vertexPosition):
-        self.send("add_vertex " + str(vertexPosition[0]) + " " + str(vertexPosition[1]))
+    def addVertex(self, x, y):
+        self.send("add_vertex " + str(x) + " " + str(y))
         self.checkResult(self.receive())
         self.tryRepaint()
            
@@ -103,16 +104,28 @@ class SandpileRemote:
         else:
             return map(lambda x : map(int, x.split(",")), edgeData.split(" "))
 
+    def addEdge(self, sourceVert, destVert, weight):
+        self.send("add_edge "+str(sourcVert)+" "+str(destVert)+" "+str(weight))
+        self.checkResult(self.receive())
+        self.tryRepaint()
+
+    def addEdges(self, edgeData):
+        self.send("add_edges " + self.formatSeqOfSeqs(edgeData))
+        self.checkResult(self.receive())
+        self.tryRepaint()
+
     def getConfig(self):
         self.send("get_config")
         configData = self.receive()
         if configData == "\n":
             return []
         else:
-            return map(int, configData.split(" "))
+            return map(int, configData.split(","))
         
     def setConfig(self, config):
-        send
+        self.send("set_config "+self.formatSeq(config))
+        self.checkResult(self.receive())
+        self.tryRepaint()
 
     def formatSeq(self, seq):
         return reduce(lambda s, x : s+","+str(x), seq[1:], str(seq[0]))
