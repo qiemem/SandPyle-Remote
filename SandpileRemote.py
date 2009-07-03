@@ -83,33 +83,41 @@ class SandpileRemote:
             return map(lambda x : map(float, x.split(" ")), vertexData.split(","))
 
     def addVertices(self, vertexPositions):
-        firstVert = str(vertexPositions[0][0])+" "+str(vertexPositions)
-        if(len(vertexPositions>1)):
-            vertexData = reduce(lambda s, v : s+","+str(v[0])+" "+str(v[1]), vertexPositions[1:], firstVertex)
-            self.send(vertexData)
+        if(len(vertexPositions)>1):
+            self.send("add_vertices "+self.formatSeqOfSeqs(vertexPositions))
         else:
-            self.send(firstVert)
-        self.checkResponse(self.receive())
+            self.send("add_vertices " + firstVert)
+        self.checkResult(self.receive())
+        self.tryRepaint()
 
     def addVertex(self, vertexPosition):
-        self.send(str(vertexPosition[0]) + " " + str(vertexPosition[1]))
-        self.checkRespone(self.receive)
+        self.send("add_vertex " + str(vertexPosition[0]) + " " + str(vertexPosition[1]))
+        self.checkResult(self.receive())
+        self.tryRepaint()
            
     def getEdges(self):
         self.send("get_edges")
         edgeData = self.receive()
-        if edgeData = "\n":
+        if edgeData == "\n":
             return []
         else:
-            return map(lambda x : map(int, x.split(" ")), edgeData.split(","))
+            return map(lambda x : map(int, x.split(",")), edgeData.split(" "))
 
     def getConfig(self):
         self.send("get_config")
         configData = self.receive()
-        if configData = "\n":
+        if configData == "\n":
             return []
         else:
             return map(int, configData.split(" "))
         
+    def setConfig(self, config):
+        send
+
+    def formatSeq(self, seq):
+        return reduce(lambda s, x : s+","+str(x), seq[1:], str(seq[0]))
+    
+    def formatSeqOfSeqs(self, seq):
+        return reduce(lambda s, x : s+" "+self.formatSeq(x), seq[1:], self.formatSeq(seq[0]))
 
 
