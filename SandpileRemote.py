@@ -81,7 +81,11 @@ class SandpileRemote:
         if vertexData == "\n":
             return []
         else:
-            return map(lambda x : map(float, x.split(" ")), vertexData.split(","))
+            return map(lambda x : map(float, x.split(",")), vertexData.split(" "))
+
+    def getVertex(self, vert):
+        self.send("get_vertex "+str(vert))
+        return map(float, self.receive().split(","))
 
     def addVertices(self, vertexPositions):
         if(len(vertexPositions)>1):
@@ -105,7 +109,7 @@ class SandpileRemote:
             return map(lambda x : map(int, x.split(",")), edgeData.split(" "))
 
     def addEdge(self, sourceVert, destVert, weight):
-        self.send("add_edge "+str(sourcVert)+" "+str(destVert)+" "+str(weight))
+        self.send("add_edge "+str(sourceVert)+" "+str(destVert)+" "+str(weight))
         self.checkResult(self.receive())
         self.tryRepaint()
 
@@ -121,11 +125,123 @@ class SandpileRemote:
             return []
         else:
             return map(int, configData.split(","))
+
+    def getSand(self, vert):
+        self.send("get_sand "+str(vert))
+        return int(self.receive())
+
+    def setSand(self, vert, amount):
+        self.send("set_sand "+str(vert)+" "+str(amount))
+        self.checkResult(self.receive())
+        self.tryRepaint()
+
+    def addSand(self, vert, amount):
+        self.send("add_sand "+str(vert)+" "+str(amount))
+        self.checkResult(self.receive())
+        self.tryRepaint()
+
+    def addRandomSand(self, amount):
+        self.send("add_random "+str(amount))
+        self.checkResponse()
         
     def setConfig(self, config):
         self.send("set_config "+self.formatSeq(config))
         self.checkResult(self.receive())
         self.tryRepaint()
+
+    def addConfig(self, config):
+        self.send("add_config "+self.formatSeq(config))
+        self.checkResult(self.receive())
+        self.tryRepaint()
+
+    def getUnstables(self):
+        self.send("get_unstables")
+        return map(int, self.receive().split(","))
+
+    def getNumUnstables(self):
+        self.send("get_num_unstables")
+        return int(self.receive())
+
+    def isSink(self, vert):
+        self.send("is_sink "+str(vert))
+        response = self.receive()
+        if(response=="true"):
+            return True
+        else:
+            return False
+
+    def getSinks(self):
+        self.send("get_sinks")
+        return map(int, self.receive().split(","))
+
+    def getNonsinks(self):
+        self.send("get_nonsinks")
+        return map(int, self.receive().split(","))
+
+    def getSelected(self):
+        self.send("get_selected")
+        return map(int, self.receive().split(","))
+
+    def getConfigNamed(self, name):
+        self.send("get_config "+name)
+        return map(int, self.receive().split(","))
+    
+    def setToMaxStable(self):
+        self.send("set_to_max_stable")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def addMaxStable(self):
+        self.send("add_max_stable")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def getMaxStable(self):
+        self.send("get_max_stable")
+        return map(int, self.receive().split(","))
+
+    def setToIdentity(self):
+        self.send("set_to_identity")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def addIdentity(self):
+        self.send("add_identity")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def getIdentity(self):
+        self.send("get_identity")
+        return map(int, self.receive().split(","))
+
+    def setToBurning(self):
+        self.send("set_to_burning")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def addBurning(self):
+        self.send("add_burning")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def getBurning(self):
+        self.send("get_burning")
+        return map(int, self.receive().split(","))
+
+    def setToDual(self):
+        self.send("set_to_dual")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def addDual(self):
+        self.send("add_dual")
+        self.checkResponse()
+        self.tryRepaint()
+
+    def getDual(self):
+        self.send("get_dual")
+        return map(int, self.receive().split(","))
+
 
     def formatSeq(self, seq):
         return reduce(lambda s, x : s+","+str(x), seq[1:], str(seq[0]))
@@ -133,4 +249,4 @@ class SandpileRemote:
     def formatSeqOfSeqs(self, seq):
         return reduce(lambda s, x : s+" "+self.formatSeq(x), seq[1:], self.formatSeq(seq[0]))
 
-
+    
