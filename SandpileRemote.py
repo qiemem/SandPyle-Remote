@@ -1,81 +1,370 @@
+r"""
+Sandpile Remote
+
+A class for interacting remotely with the Sandpiles standalone program.
+
+Version: 2009.6.7
+
+AUTHOR:
+    -- Bryan Head (2009-06-7)
+
+EXAMPLES:
+
+After the Sandpiles program is running, hit the "Server" button and press yes.
+Then, from a Python terminal, we can create an instance of the SandileRemote class
+and connect to the program:
+
+    >>> srem = SandpileRemove()
+    >>> srem.connect()
+
+The Sandpile program will inform you of the connection.
+"""
+
 from socket import *
 
 class CommandError(Exception):
+    """
+    This error should occur when the Sandpile program doesn't know
+    what to do with a particular command.
+    """
+
     def __init__(self, message):
         self.msg = message
     def __str__(self):
         return self.msg
 
 class SandpileRemote:
+    r"""
+    This class can connect connect to the Sandpile program and can
+    issue remote commands. Note that an instance of this class has
+    several boolean fields to customize behavior:
+
+    autoRepaint - If True, will automatically send the repaint command
+    to the Sandpile program after every command that manipulates either
+    the graph or configuration. Default is True.
+
+    verbose - If True, the current operation will be printed out. Ex:
+        >>> srem..update()
+            Sending message
+            Message sent
+            Waiting for message
+            Received message
+            Sending message
+            Message sent
+            Waiting for message
+            Received message
+    Default is False.
+
+    echo - If verbose is True and this is True, will print out the contents
+    of each message sent and received.
+        >>> srem.update()
+            Sending message: "update"
+            Message sent
+            Waiting for message
+            Received message: "done"
+            Sending message: "repaint"
+            Message sent
+            Waiting for message
+            Received message: "done"
+    Warning: When dealing with such getConfig, getVertices, etc., the messages
+    can be massive. It is highly recommended to have this off unless you need
+    it for debugging purposes. Default is False.
+    """
+
     def __init__(self):
+        r"""
+        Create an object to access the Sandpile program remotely.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+        
+        SandpileRemote
+
+        EXAMPLES:
+
+        >>> srem = SandpileRemote()
+        """
         self.autoRepaint = True
         self.verbose = False
         self.echo = False
 
-    def printVerbose(self, msg):
+    def __printVerbose(self, msg):
+        """
+        A convenience method. If self.verbose=True, prints msg.
+        """
         if self.verbose:
             print(msg)
 
-    def checkResult(self, result):
+    def __checkResult(self, result):
+        """
+        Makes sure that the response issued by the Sandpile program after
+        a non-get command is not an error. The Sandpile program issues the
+        response "done\n" unless there is an error, or certain other data
+        was requested. This just checks to make sure result == "done\n"
+        and raises an exception if not.
+        """
         if(result != "done\n"):
             print(result)
             raise CommandError(result)
 
-    def tryRepaint(self):
+    def __tryRepaint(self):
+        """
+        A convenience method that will send the repaint command if autorepaint
+        is True.
+        """
         if(self.autoRepaint):
             self.repaint()
 
     def connect(self, host="localhost", port=7236):
+        r"""
+        Attempts to connect to the Sandpile program. If the program is not
+        accepting connections, will raise a Connection refused error.
+
+        INPUT:
+        
+        - ``host`` (optional) - A string representing the host address. Default
+          "localhost"
+
+        - ``port`` (optional) - An int representing the port to use. Default is
+          7236.
+        
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+        Use default settings:
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+
+        No other settings have been tested. To use them, do:
+        
+            >>> srem = SandpileRemote()
+            >>> srem.connect(host="some_ip_address", port=1234)
+        """
         self.s = socket()
-        self.printVerbose("Attempting to connect")
+        self.__printVerbose("Attempting to connect")
         self.s.connect((host, port))
-        self.printVerbose("Connected")
+        self.__printVerbose("Connected")
         self.f = self.s.makefile()
 
     def close(self):
+        r"""
+        Closes the current connection. Its not usually necessary
+        to call this.
+
+        INPUT:
+       
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.close()
+        """
         self.s.close()
         self.f.close()
 
     def send(self,msg):
+        r"""
+        Sends a message to the program. Errors if not connected or
+        if the program errors. This shouldn't typically be used by
+        the user. Note that this does not flush the response buffer
+        so there will be a backup of responses from the program if
+        the user does not call receive().
+
+        INPUT:
+
+        ``msg`` - A string of the message to send. Should NOT end with '\n'.
+          Otherwise the program will think its receiving multiples messages.
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.send("add_vertex 0.0 0.0")
+            >>> srem.receive()
+                'done\n'
+            >>> srem.send("get_vertices")
+            >>> srem.receive()
+                '0.0,0.0\n'
+        """
+
         if self.echo:
-            self.printVerbose("Sending message: \"" + msg +"\"")
+            self.__printVerbose("Sending message: \"" + msg +"\"")
         else:
-            self.printVerbose("Sending message")
+            self.__printVerbose("Sending message")
         self.s.send(msg+"\n")
-        self.printVerbose("Message sent")
+        self.__printVerbose("Message sent")
 
     def receive(self):
-        self.printVerbose("Waiting for message")
+        r"""
+        Receives a single message sent by the program. If none is present, 
+        it will wait until there is.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        string
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.send("add_vertex 0.0 0.0")
+            >>> srem.receive()
+                'done\n'
+            >>> srem.send("get_vertices")
+            >>> srem.receive()
+                '0.0,0.0\n'
+        """
+        self.__printVerbose("Waiting for message")
         msg = self.f.readline()
         if self.echo:
-            self.printVerbose("Received message: \"" + msg +"\"")
+            self.__printVerbose("Received message: \"" + msg +"\"")
         else:
-            self.printVerbose("Received message")
+            self.__printVerbose("Received message")
         return msg
 
     def repaint(self):
+        r"""
+        Tells the program to repaint. The program will not repaint
+        if the repaint option is off in Visual Options.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem.repaint()
+        """
         self.send("repaint")
-        self.checkResult(self.receive())
+        self.__checkResult(self.receive())
 
     def update(self):
+        r"""
+        Tells the program to fire all unstable vertices.
+
+        INPUT:
+        
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem.update()
+        """
         self.send("update")
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def stabilize(self):
+        r"""
+        Tells the program to stabilize the current configuration.
+        Warning: If the current graph and configuration cannot stabilize
+        (there is no global sink), then the program will enter an infinite
+        loop and this method will never return. Also note that this can
+        take a long time depending on the graph and configuration.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem.stabilize()
+        """
         self.send("stabilize")
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def deleteGraph(self):
+        r"""
+        Tells the program to delete all vertices and edges.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem.deleteGraph()
+        """
         self.send("delete_graph")
-        self.checkResult(self.receive())
+        self.__checkResult(self.receive())
 
     def clearSand(self):
+        r"""
+        Sets each vertex to 0 grains of sand.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem.clearSand()
+        """
         self.send("clear_sand")
-        self.checkResult(self.receive())
+        self.__checkResult(self.receive())
 
     def getVertices(self):
+        r"""
+        Returns the positions of the vertices in the graph.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        A list of lists of floats. Format: [[x1,y1], [x2,y2], ...]
+
+        EXAMPLES::
+        
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [3.0,-2.0]])
+            >>> srem.getVertices()
+                [[0.0, 0.0], [3.0, -2.0]]
+        """
         self.send("get_vertices")
         vertexData = self.receive()
         if vertexData == "\n":
@@ -84,23 +373,111 @@ class SandpileRemote:
             return map(lambda x : map(float, x.split(",")), vertexData.split(" "))
 
     def getVertex(self, vert):
+        r"""
+        Returns the position of a vertex.
+
+        INPUT:
+
+        ``vert`` - An int representing the index of the desired vertex.
+
+        OUTPUT:
+
+        A list of float: [x, y].
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [3.0,-2.0]])
+            >>> srem.getVertex(1)
+                [3.0, -2.0]
+        """
+        
         self.send("get_vertex "+str(vert))
         return map(float, self.receive().split(","))
 
     def addVertices(self, vertexPositions):
+        """
+        Adds vertices at the indicated positions to the graph.
+
+        INPUT:
+
+        ``vertexPositions`` - A list of lists of floats of the format:
+          [[x1, y1], [x2, y2],...]
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [3.0, -2.0]])
+            >>> srem.addVertices([[5.0, 5.0], [1.0, 2.0]])
+            >>> srem.getVertices()
+                [[0.0, 0.0], [3.0, -2.0], [5.0, 5.0], [1.0, 2.0]]
+        """
         if(len(vertexPositions)>1):
             self.send("add_vertices "+self.formatSeqOfSeqs(vertexPositions))
         else:
             self.send("add_vertices " + firstVert)
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def addVertex(self, x, y):
+        r"""
+        Adds a vertex at the indicated position.
+
+        INPUT:
+
+        ``x`` - A float representing the x-coordinate of the vertex.
+        ``y`` - A float representing the y-coordinate of the vertex.
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertex(0.0, 0.0)
+            >>> srem.addVertex(5.0, 5.0)
+            >>> srem.getVertices()
+                [[0.0, 0.0], [5.0, 5.0]]
+        """
         self.send("add_vertex " + str(x) + " " + str(y))
-        self.checkResult(self.receive())
-        self.tryRepaint()
-           
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
+
     def getEdges(self):
+        """
+        Returns the edges of the current graph.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        A list of lists of integers of the format: [[v1, v2, w12], [v3, v4, w34], ...]
+          where v1 is the index of the source vertex, v2 is the index of destination
+          vertex and w12 is the weight of the edge. Likewise for [v3, v4, w34].
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertex(0.0, 0.0)
+            >>> srem.addVertex(5.0, 5.0)
+            >>> srem.addEdge(0, 1, 5)
+            >>> srem.getEdges()
+                [[0, 1, 5]]
+            >>> srem.addEdge(1, 0, 2)
+            >>> srem.getEdges()
+                [[0, 1, 5], [1, 0, 2]]
+        """        
         self.send("get_edges")
         edgeData = self.receive()
         if edgeData == "\n":
@@ -109,14 +486,89 @@ class SandpileRemote:
             return map(lambda x : map(int, x.split(",")), edgeData.split(" "))
 
     def addEdge(self, sourceVert, destVert, weight):
+        r"""
+        Adds an edge to the graph.
+
+        INPUT:
+
+        ``sourceVert`` - An int representing the index of the source vertex.
+
+        ``destVert`` - An int representing the index of the destination vertex.
+
+        ``weight`` - An int representing the weight of the edge.
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        If there is an edge already present between ``sourceVert`` and
+          ``destVert``, the weight of the edge will be increased by
+          ``weight``. Thus, negative weights will decrease the weight 
+          of the edge. If the weight of the edge falls to 0 or below, it 
+          will be removed.
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertex(0.0, 0.0)
+            >>> srem.addVertex(5.0, 5.0)
+            >>> srem.addEdge(0, 1, 5)
+            >>> srem.getEdges()
+                [[0, 1, 5]]
+            >>> srem.addEdge(1, 0, 2)
+            >>> srem.getEdges()
+                [[0, 1, 5], [1, 0, 2]]
+            >>> srem.addEdge(0, 1, 3)
+            >>> srem.getEdges()
+                [[0, 1, 8], [1, 0, 2]]
+            >>> srem.addEdge(1, 0, -2)
+            >>> [[0, 1, 8]]
+        """
         self.send("add_edge "+str(sourceVert)+" "+str(destVert)+" "+str(weight))
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def addEdges(self, edgeData):
+        r"""
+        Adds edges to the graph.
+
+        INPUT:
+
+        ``edgeData`` - A list of lists of integers of the format: 
+          [[v1, v2, w12], [v3, v4, w34], ...] where v1 is the index 
+          of the source vertex, v2 is the index of destination vertex
+          and w12 is the weight of the edge. Likewise for [v3, v4, w34].
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        If there is an edge already present between ``sourceVert`` and
+          ``destVert``, the weight of the edge will be increased by
+          ``weight``. Thus, negative weights will decrease the weight 
+          of the edge. If the weight of the edge falls to 0 or below, it 
+          will be removed.
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0]])
+            >>> srem.addEdge([[0, 1, 5], [1, 0, 2]])
+            >>> srem.getEdges()
+                [[0, 1, 5], [1, 0, 2]]
+            >>> srem.addEdge([[0, 1, 3], [1, 0, -2]])
+            >>> srem.getEdges()
+            >>> [[0, 1, 8]]
+        """
         self.send("add_edges " + self.formatSeqOfSeqs(edgeData))
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def getConfig(self):
         self.send("get_config")
@@ -132,13 +584,13 @@ class SandpileRemote:
 
     def setSand(self, vert, amount):
         self.send("set_sand "+str(vert)+" "+str(amount))
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def addSand(self, vert, amount):
         self.send("add_sand "+str(vert)+" "+str(amount))
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def addRandomSand(self, amount):
         self.send("add_random "+str(amount))
@@ -146,13 +598,13 @@ class SandpileRemote:
         
     def setConfig(self, config):
         self.send("set_config "+self.formatSeq(config))
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def addConfig(self, config):
         self.send("add_config "+self.formatSeq(config))
-        self.checkResult(self.receive())
-        self.tryRepaint()
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
 
     def getUnstables(self):
         self.send("get_unstables")
@@ -189,12 +641,12 @@ class SandpileRemote:
     def setToMaxStable(self):
         self.send("set_to_max_stable")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def addMaxStable(self):
         self.send("add_max_stable")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def getMaxStable(self):
         self.send("get_max_stable")
@@ -203,12 +655,12 @@ class SandpileRemote:
     def setToIdentity(self):
         self.send("set_to_identity")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def addIdentity(self):
         self.send("add_identity")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def getIdentity(self):
         self.send("get_identity")
@@ -217,12 +669,12 @@ class SandpileRemote:
     def setToBurning(self):
         self.send("set_to_burning")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def addBurning(self):
         self.send("add_burning")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def getBurning(self):
         self.send("get_burning")
@@ -231,12 +683,12 @@ class SandpileRemote:
     def setToDual(self):
         self.send("set_to_dual")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def addDual(self):
         self.send("add_dual")
         self.checkResponse()
-        self.tryRepaint()
+        self.__tryRepaint()
 
     def getDual(self):
         self.send("get_dual")
