@@ -571,6 +571,27 @@ class SandpileRemote:
         self.__tryRepaint()
 
     def getConfig(self):
+        r"""
+        Returns the current configuration of the graph.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        A list of integers representing the amount of sand at each vertex.
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0]])
+            >>> srem.setConfig([3,4])
+            >>> srem.getConfig()
+                [3, 4]
+        """
+
         self.send("get_config")
         configData = self.receive()
         if configData == "\n":
@@ -579,42 +600,298 @@ class SandpileRemote:
             return map(int, configData.split(","))
 
     def getSand(self, vert):
+        r"""
+        Returns the amount of sand at the indicated vertex.
+
+        INPUT:
+
+        ``vert`` - int; the index of the vertex.
+
+        OUTPUT:
+
+        int; the amount of sand at vertex ``vert``.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0]])
+            >>> srem.getSand(1)
+                0
+            >>> srem.setConfig([3,4])
+            >>> stem.getSand(0)
+                3
+            >>> stem.getSand(1)
+                4
+        """
         self.send("get_sand "+str(vert))
         return int(self.receive())
 
     def setSand(self, vert, amount):
+        r"""
+        Sets the amount of sand at the indicated vertex.
+
+        INPUT:
+
+        ``vert`` - int; the index of the vertex.
+
+        ``amount`` - int; the number of grains.
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        ``amount`` can be negative, and thus makeing the vertex in debt
+          so to speak.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0]])
+            >>> srem.setSand(1,4)
+            >>> srem.getSand(1)
+                4
+            >>> srem.setSand(1,-7)
+            >>> srem.getSand(1)
+                -7
+        """
         self.send("set_sand "+str(vert)+" "+str(amount))
         self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def addSand(self, vert, amount):
+        r"""
+        Adds the amount of sand to the indicated vertex.
+
+        INPUT:
+
+        ``vert`` - int; the index of the vertex.
+
+        ``amount`` - int; the number of grains to add.
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        ``amount`` can be negative, thus removing sand from the vertex.
+          If the number of grains on the vertex drops below 0, it will
+          stay there; thus the vertex will sort of be in debt.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0]])
+            >>> srem.addSand(1,4)
+            >>> srem.getSand(1)
+                4
+            >>> srem.addSand(1,-7)
+            >>> srem.getSand(1)
+                -3
+        """
         self.send("add_sand "+str(vert)+" "+str(amount))
         self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def addRandomSand(self, amount):
-        self.send("add_random "+str(amount))
-        self.checkResponse()
+        r"""
+        Adds random sand to the nonsink vertices.
+
+        INPUT:
+
+        ``amount`` - int; the total number of grains to add.
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        If ``amount`` is negative, no sand will be added or taken away.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0], [10.0, 0]])
+            >>> srem.addEdges([[0,1,1],[1,0,1], [1, 2, 1]])
+            >>> srem.addRandomSand(10)
+            >>> srem.getConfig()
+                [3, 7, 0]
+        """
+        self.send("add_random_sand "+str(amount))
+        self.__checkResult(self.receive())
+        self.__tryRepaint()
         
     def setConfig(self, config):
+        r"""
+        Sets the current configuration in the program.
+
+        INPUT:
+
+        ``config`` - A list of integers representing the configuration.
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        Negative amounts of sand are allowed.
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0]])
+            >>> srem.setConfig([3,4])
+            >>> srem.getConfig()
+                [3, 4]
+            >>> srem.setConfig([-20, 15])
+            >>> srem.getConfig()
+                [-20, 15]
+        """
+
+        
         self.send("set_config "+self.formatSeq(config))
         self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def addConfig(self, config):
+        r"""
+        Adds the given configuration to the current configuration in the program.
+
+        INPUT:
+
+        ``config`` - A list of integers representing the configuration.
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        Negative amounts of sand are allowed.
+
+        EXAMPLES::
+
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0]])
+            >>> srem.setConfig([3,4])
+            >>> srem.getConfig()
+                [3, 4]
+            >>> srem.adConfig([7, 8])
+            >>> srem.getConfig()
+                [10, 12]
+        """
         self.send("add_config "+self.formatSeq(config))
         self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def getUnstables(self):
+        r"""
+        Gets a list of the unstable vertices.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        A list of ints that are the indices of the unstables vertices.
+
+        NOTES:
+
+        Should never return sinks.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0], [10.0, 0]])
+            >>> srem.addEdges([[0, 1, 1], [1, 0, 10], [1, 10, 10]])
+            >>> srem.getUnstables()
+                []
+            >>> srem.setConfig([2, 17, 0])
+            >>> srem.getUnstables()
+                [0]
+            >>> srem.addConfig([0, 5, 3])
+            >>> srem.getUnstables()
+                [0, 1]
+        """
+
+        
         self.send("get_unstables")
         return map(int, self.receive().split(","))
 
     def getNumUnstables(self):
+        r"""
+        Returns the number of unstable vertices.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        int; the number of unstable vertices.
+
+        NOTES:
+
+        This is very useful collecting the number of firings during
+          a stabilization. See the example.
+
+        EXAMPLES::
+
+        Suppose we wish to calculate the number of firings that take
+          place on a 20x20 grid while stabilizing the max stable
+          plus one grain everywhere.
+            
+            >>> srem.getToMaxStable()
+            >>> len(srem.getConfig())
+                480    # Note that the additional 80 are from the sinks
+                       # around the edges.
+            >>> srem.addConfig([1]*480)    # Add ones everywhere
+            >>> numUnstables = srem.getNumUnstables()
+            >>> numUnstables
+                480    # Note that the sinks never register as unstable.
+            >>> total = numUnstables
+            >>> while numUnstables > 0:
+                    srem.update()
+                    numUnstables = srem.getNumUnstables()
+                    total += numUnstables
+            # At this point, we watch the graph stabilize.
+            # If wish to turn off repainting to speed up the stabilization
+            # simply turn it off in the visual options tab.
+            >>> total
+                11556
+        """
         self.send("get_num_unstables")
         return int(self.receive())
 
     def isSink(self, vert):
+        r"""
+        Tells whether or the indicated vertex is a sink.
+
+        INPUT:
+
+        ``vert`` - The index (an int) of the vertex.
+
+        OUTPUT:
+
+        boolean; True means that the vertex is a sink.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0], [10.0, 0]])
+            >>> srem.addEdges([[0, 1, 1], [1, 0, 10], [1, 10, 10]])
+            >>> srem.isSink(0)
+                False
+            >>> srem.isSink(2)
+                True
+        """ 
         self.send("is_sink "+str(vert))
         response = self.receive()
         if(response=="true"):
@@ -623,14 +900,75 @@ class SandpileRemote:
             return False
 
     def getSinks(self):
+        r"""
+        Returns a list of all the sinks.
+
+        INPUT:
+
+        None
+      
+        OUTPUT:
+        
+        A list of the indices (ints) of the sinks.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0], [10.0, 0]])
+            >>> srem.addEdges([[0, 1, 1], [1, 0, 10], [1, 10, 10]])
+            >>> srem.getSinks()
+                [2]
+            >>> srem.addVertex(-5.0, -5.0)
+            >>> srem.getSinks()
+                [2, 3]
+        """
         self.send("get_sinks")
         return map(int, self.receive().split(","))
 
     def getNonsinks(self):
+        r"""
+        Returns a list of all the sinks.
+
+        INPUT:
+
+        None
+      
+        OUTPUT:
+        
+        A list of the indices (ints) of the sinks.
+
+        EXAMPLES::
+            >>> srem = SandpileRemote()
+            >>> srem.connect()
+            >>> srem.addVertices([[0.0, 0.0], [5.0, 5.0], [10.0, 0]])
+            >>> srem.addEdges([[0, 1, 1], [1, 0, 10], [1, 10, 10]])
+            >>> srem.getSinks()
+                [0, 1]
+        """
         self.send("get_nonsinks")
         return map(int, self.receive().split(","))
 
     def getSelected(self):
+        r"""
+        Returns a list of all the vertices that are currently
+          selected in the program.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        A list of the indices (ints) of the selected vertices.
+
+        EXAMPLES::
+
+        Suppose we select the middle four vertices of a 20x20 grid 
+          with sinks around the edges. Then we have:
+        
+        >>> srem.getSelected()
+            [189, 190, 210, 209]
+        """
         self.send("get_selected")
         return map(int, self.receive().split(","))
 
@@ -640,12 +978,12 @@ class SandpileRemote:
     
     def setToMaxStable(self):
         self.send("set_to_max_stable")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def addMaxStable(self):
         self.send("add_max_stable")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def getMaxStable(self):
@@ -654,12 +992,12 @@ class SandpileRemote:
 
     def setToIdentity(self):
         self.send("set_to_identity")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def addIdentity(self):
         self.send("add_identity")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def getIdentity(self):
@@ -668,12 +1006,12 @@ class SandpileRemote:
 
     def setToBurning(self):
         self.send("set_to_burning")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def addBurning(self):
         self.send("add_burning")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def getBurning(self):
@@ -682,12 +1020,12 @@ class SandpileRemote:
 
     def setToDual(self):
         self.send("set_to_dual")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def addDual(self):
         self.send("add_dual")
-        self.checkResponse()
+        self.__checkResult()
         self.__tryRepaint()
 
     def getDual(self):
