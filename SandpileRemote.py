@@ -973,10 +973,52 @@ class SandpileRemote:
         return map(int, self.receive().split(","))
 
     def getConfigNamed(self, name):
+        r"""
+        Returns the configuration store in the config manager of
+          the program with under the given name.
+        
+        INPUT:
+
+        ``name`` - string; The name of the configuration
+
+        OUTPUT:
+
+        The configuration as a list of integers representing the
+          amount of sand at each vertex.
+
+        NOTES:
+
+        Currently, only custom configs and identity can be returned
+          this way. Max stable, burning, etc. have their own functions.
+
+        EXAMPLES::
+
+        If you have stored configuration named "Config", then you would
+          use
+          
+            >>> srem.getConfigNames("Config")
+        """
+
         self.send("get_config "+name)
         return map(int, self.receive().split(","))
     
     def setToMaxStable(self):
+        r"""
+        Sets the current configuration to the max stable configuration.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem.setToMaxStable()
+        """
+
         self.send("set_to_max_stable")
         self.__checkResult()
         self.__tryRepaint()
@@ -991,11 +1033,55 @@ class SandpileRemote:
         return map(int, self.receive().split(","))
 
     def setToIdentity(self):
+        r"""
+        Sets the current configuration to the identity configuration.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        Calculating the identity can take a long time on big graphs
+          but then is automatically stored for later use. However,
+          if the graph is changed, the identity will have to be
+          recalculated.
+
+        EXAMPLES::
+
+            >>> srem.setToIdentity()
+        """
         self.send("set_to_identity")
         self.__checkResult()
         self.__tryRepaint()
 
     def addIdentity(self):
+        r"""
+        Adds the identity configuration to the current configurationXS.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        NOTES:
+
+        Calculating the identity can take a long time on big graphs
+          but then is automatically stored for later use. However,
+          if the graph is changed, the identity will have to be
+          recalculated.
+
+        EXAMPLES::
+
+            >>> srem.addIdentity()
+        """
         self.send("add_identity")
         self.__checkResult()
         self.__tryRepaint()
@@ -1005,6 +1091,22 @@ class SandpileRemote:
         return map(int, self.receive().split(","))
 
     def setToBurning(self):
+        r"""
+        Sets the current configuration to the minimal burning
+          configuration.
+
+        INPUT:
+
+        None
+
+        OUTPUT:
+
+        None
+
+        EXAMPLES::
+
+            >>> srem.setToBurning()
+        """
         self.send("set_to_burning")
         self.__checkResult()
         self.__tryRepaint()
@@ -1033,10 +1135,10 @@ class SandpileRemote:
         return map(int, self.receive().split(","))
 
 
-    def formatSeq(self, seq):
+    def __formatSeq(self, seq):
         return reduce(lambda s, x : s+","+str(x), seq[1:], str(seq[0]))
     
-    def formatSeqOfSeqs(self, seq):
-        return reduce(lambda s, x : s+" "+self.formatSeq(x), seq[1:], self.formatSeq(seq[0]))
+    def __formatSeqOfSeqs(self, seq):
+        return reduce(lambda s, x : s+" "+self.__formatSeq(x), seq[1:], self.__formatSeq(seq[0]))
 
     
