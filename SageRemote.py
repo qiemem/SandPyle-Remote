@@ -110,7 +110,7 @@ class SageRemote:
         """
         self.srem.clearSand()
 
-    def getGraph(self):
+    def getGraph(self, sinkLabel = 'sink'):
         r"""
         Retrieves the current graph in the program.
 
@@ -125,16 +125,17 @@ class SageRemote:
         EXAMPLES::
         
         """
+        self.sinkLabel = sinkLabel
         self.indicesToLabels = list()
         self.labelsToIndices = dict()
         vertexPosList = self.srem.getVertices()
         sinks = set(self.srem.getSinks())
         edges = self.srem.getEdges()
         vertexPosDict = dict()
-        graphData={'sink' : {}}
+        graphData={self.sinkLabel : {}}
         for v in range(len(vertexPosList)):
             if v in sinks:
-                self.indicesToLabels.append('sink')
+                self.indicesToLabels.append(self.sinkLabel)
             else:
                 self.indicesToLabels.append(v)
                 self.labelsToIndices[v]=v
@@ -142,12 +143,12 @@ class SageRemote:
                 vertexPosDict[v]=vertexPosList[v]
         for e in edges:
             if e[1] in sinks:
-                graphData[e[0]]['sink'] = e[2]
+                graphData[e[0]][self.sinkLabel] = e[2]
             else:
                 graphData[e[0]][e[1]]=e[2]
         return DiGraph(data=graphData, pos=vertexPosDict)
 
-    def setGraph(self, graph, scale=10.0, offset = (0.0, 0.0)):
+    def setGraph(self, graph, sinkLabel = 'sink', scale=10.0, offset = (0.0, 0.0)):
         r"""
         Sets the programs graph to the given graph.
 
@@ -164,6 +165,7 @@ class SageRemote:
         EXAMPLES::
 
         """
+        self.sinkLabel = sinkLabel
         if graph.get_pos() is None:
             graph.plot(save_pos=True)
         self.labelsToIndices = dict()
@@ -522,15 +524,23 @@ class SageRemote:
 
 
     def __labelledConfigToIndexed(self, config):
-        return map(lambda v : config[indicesToLabels[v]], range(len(config)))
+        newConfig = [0]*len(self.indicesToLabels)
+        for v in config:
+            if v != self.sinkLabel:
+                newConfig[self.labelsToIndices[v]]=config[v]
+        return newConfig
 
     def __indexedConfigToLabelled(self, config):
-        return dict(map(lambda v : (indicesToLabels[v], config[v]), range(len(config))))
+        newConfig  = dict()
+        for v in config:
+            if self.indicesToLabels[v]!=self.sinkLabel:
+                newConfig[self.indicesToLabels[v]] = config[v]
+        return newConfig
 
     def __labelledVerticesToIndexed(self, vertices):
-        return map(lambda v : labelsToIndices[v], vertices)
+        return map(lambda v : self.labelsToIndices[v], vertices)
     
-    def __indexedVertices(self, vertices):
-        return map(lambda v : indicesToLabels[v], vertices)
+    def __indexedVerticesToLabelled(self, vertices):
+        return filter( lambda v : v!=self.sinkLabel, map(lambda v : self.indicesToLabels[v], vertices))
 
     
