@@ -372,6 +372,24 @@ class SandpileRemote:
         else:
             return map(lambda x : map(float, x.split(",")), vertexData.split(" "))
 
+    def getNumOfVertices(self):
+        r"""
+        Retrieces the number of vertices.
+
+        INPUTS:
+
+        None
+
+        OUTPUTS:
+
+        The number of vertices as an int.
+
+        EXAMPLES::
+
+        """
+        self.send("get_num_of_vertices")
+        return int(self.receive())
+
     def getVertex(self, vert):
         r"""
         Returns the position of a vertex.
@@ -419,7 +437,7 @@ class SandpileRemote:
                 [[0.0, 0.0], [3.0, -2.0], [5.0, 5.0], [1.0, 2.0]]
         """
         if(len(vertexPositions)>1):
-            self.send("add_vertices "+self.formatSeqOfSeqs(vertexPositions))
+            self.send("add_vertices "+(self.formatSeqOfSeqs(vertexPositions)))
         else:
             self.send("add_vertices " + firstVert)
         self.__checkResult(self.receive())
@@ -1135,10 +1153,10 @@ class SandpileRemote:
         return map(int, self.receive().split(","))
 
 
-    def __formatSeq(self, seq):
+    def formatSeq(self, seq):
         return reduce(lambda s, x : s+","+str(x), seq[1:], str(seq[0]))
     
-    def __formatSeqOfSeqs(self, seq):
-        return reduce(lambda s, x : s+" "+self.__formatSeq(x), seq[1:], self.__formatSeq(seq[0]))
+    def formatSeqOfSeqs(self, seq):
+        return reduce(lambda s, x : s+" "+self.formatSeq(x), seq[1:], self.formatSeq(seq[0]))
 
     
