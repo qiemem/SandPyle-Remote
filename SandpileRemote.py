@@ -390,7 +390,7 @@ class SandpileRemote:
         self.send("get_num_of_vertices")
         return int(self.receive())
 
-    def get-vertex(self, vert):
+    def get_vertex(self, vert):
         r"""
         Returns the position of a vertex.
 
