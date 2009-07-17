@@ -4,8 +4,8 @@ class SageRemote:
 
     def __init__(self):
         self.srem = SandpileRemote()
-        self.labelsToIndices = dict()
-        self.indicesToLabels = list()
+        self.labels_to_indices = dict()
+        self.indices_to_labels = list()
 
     def connect(self, host="localhost", port=7236):
         self.srem.connect(host, port)
@@ -72,7 +72,7 @@ class SageRemote:
         """
         self.srem.stabilize()
 
-    def deleteGraph(self):
+    def delete_graph(self):
         r"""
         Tells the program to delete all vertices and edges.
 
@@ -86,13 +86,13 @@ class SageRemote:
 
         EXAMPLES::
 
-            >>> srem.deleteGraph()
+            >>> srem.delete_graph()
         """
-        self.srem.deleteGraph()
-        self.labelsToIndices = dict()
-        self.indicesToLabels = list()
+        self.srem.delete_graph()
+        self.labels_to_indices = dict()
+        self.indices_to_labels = list()
 
-    def clearSand(self):
+    def clear_sand(self):
         r"""
         Sets each vertex to 0 grains of sand.
 
@@ -106,11 +106,11 @@ class SageRemote:
 
         EXAMPLES::
 
-            >>> srem.clearSand()
+            >>> srem.clear_sand()
         """
-        self.srem.clearSand()
+        self.srem.clear_sand()
 
-    def getGraph(self, sinkLabel = 'sink'):
+    def get_graph(self, sink_label = 'sink'):
         r"""
         Retrieves the current graph in the program.
 
@@ -125,30 +125,30 @@ class SageRemote:
         EXAMPLES::
         
         """
-        self.sinkLabel = sinkLabel
-        self.indicesToLabels = list()
-        self.labelsToIndices = dict()
-        vertexPosList = self.srem.getVertices()
-        sinks = set(self.srem.getSinks())
-        edges = self.srem.getEdges()
-        vertexPosDict = dict()
-        graphData={self.sinkLabel : {}}
-        for v in range(len(vertexPosList)):
+        self.sink_label = sink_label
+        self.indices_to_labels = list()
+        self.labels_to_indices = dict()
+        vertex_pos_list = self.srem.get_vertices()
+        sinks = set(self.srem.get_sinks())
+        edges = self.srem.get_edges()
+        vertex_pos_dict = dict()
+        graph_data={self.sink_label : {}}
+        for v in range(len(vertex_pos_list)):
             if v in sinks:
-                self.indicesToLabels.append(self.sinkLabel)
+                self.indices_to_labels.append(self.sink_label)
             else:
-                self.indicesToLabels.append(v)
-                self.labelsToIndices[v]=v
-                graphData[v] = dict()
-                vertexPosDict[v]=vertexPosList[v]
+                self.indices_to_labels.append(v)
+                self.labels_to_indices[v]=v
+                graph_data[v] = dict()
+                vertex_pos_dict[v]=vertex_pos_list[v]
         for e in edges:
             if e[1] in sinks:
-                graphData[e[0]][self.sinkLabel] = e[2]
+                graph_data[e[0]][self.sink_label] = e[2]
             else:
-                graphData[e[0]][e[1]]=e[2]
-        return DiGraph(data=graphData, pos=vertexPosDict)
+                graph_data[e[0]][e[1]]=e[2]
+        return DiGraph(data=graph_data, pos=vertex_pos_dict)
 
-    def setGraph(self, graph, sinkLabel = 'sink', scale=10.0, offset = (0.0, 0.0)):
+    def set_graph(self, graph, sink_label = 'sink', scale=10.0, offset = (0.0, 0.0)):
         r"""
         Sets the programs graph to the given graph.
 
@@ -165,45 +165,45 @@ class SageRemote:
         EXAMPLES::
 
         """
-        self.sinkLabel = sinkLabel
-        posDict = graph.get_pos()
-        if posDict is None:
-            sinklessGraph = deepcopy(graph)
-            sinklessGraph.delete_vertex(sinkLabel)
-            sinklessGraph.plot(save_pos=True)
-            posDict = sinklessGraph.get_pos()
-            posDict[sinkLabel]=offset
-        self.labelsToIndices = dict()
-        self.indicesToLabels = list()
-        vertexPositions = list()
+        self.sink_label = sink_label
+        pos_dict = graph.get_pos()
+        if pos_dict is None:
+            sinkless_graph = deepcopy(graph)
+            sinkless_graph.delete_vertex(sink_label)
+            sinkless_graph.plot(save_pos=True)
+            pos_dict = sinkless_graph.get_pos()
+            pos_dict[sink_label]=offset
+        self.labels_to_indices = dict()
+        self.indices_to_labels = list()
+        vertex_positions = list()
         for v in graph.vertices():
-            self.labelsToIndices[v] = len(self.indicesToLabels)
-            self.indicesToLabels.append(v)
-            pos = posDict[v]
-            vertexPositions.append([scale * pos[0] + offset[0], scale*pos[1] + offset[1]])
-        self.srem.deleteGraph()
-        self.srem.addVertices(vertexPositions)
+            self.labels_to_indices[v] = len(self.indices_to_labels)
+            self.indices_to_labels.append(v)
+            pos = pos_dict[v]
+            vertex_positions.append([scale * pos[0] + offset[0], scale*pos[1] + offset[1]])
+        self.srem.delete_graph()
+        self.srem.add_vertices(vertex_positions)
         edges = list()
         for e in graph.edges():
-            if e[0]!=self.sinkLabel:
-                edges.append([self.labelsToIndices[e[0]], self.labelsToIndices[e[1]], e[2]])
-        self.srem.addEdges(edges)
+            if e[0]!=self.sink_label:
+                edges.append([self.labels_to_indices[e[0]], self.labels_to_indices[e[1]], e[2]])
+        self.srem.add_edges(edges)
             
 
-    def getConfig(self):
-        config = self.srem.getConfig()
-        labelledConfig = {}
+    def get_config(self):
+        config = self.srem.get_config()
+        labelled_config = {}
         for i in range(len(config)):
-            labelledConfig[self.indicesToLabels[i]] = config[i]
-        return labelledConfig
+            labelled_config[self.indices_to_labels[i]] = config[i]
+        return labelled_config
 
-    def getSand(self, vert):
-        return self.srem.getSand(self.labelsToIndices[vert])
+    def get_sand(self, vert):
+        return self.srem.get_sand(self.labels_to_indices[vert])
 
-    def setSand(self, vert, amount):
-        self.srem.setSand(labelsToIndices[vert], amount)
+    def set_sand(self, vert, amount):
+        self.srem.set_sand(labels_to_indices[vert], amount)
 
-    def addSand(self, vert, amount):
+    def add_sand(self, vert, amount):
         r"""
         Adds the amount of sand to the indicated vertex.
 
@@ -225,9 +225,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        self.srem.addSand(labelsToIndices[vert])
+        self.srem.add_sand(labels_to_indices[vert])
 
-    def addRandomSand(self, amount):
+    def add_random_sand(self, amount):
         r"""
         Adds random sand to the nonsink vertices.
 
@@ -245,9 +245,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        self.srem.addRandomSand(amount)
+        self.srem.add_random_sand(amount)
         
-    def setConfig(self, config):
+    def set_config(self, config):
         r"""
         Sets the current configuration in the program.
 
@@ -265,9 +265,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        self.srem.setConfig(self.__labelledConfigToIndexed(config))
+        self.srem.set_config(self.__labelled_config_to_indexed(config))
 
-    def addConfig(self, config):
+    def add_config(self, config):
         r"""
         Adds the given configuration to the current configuration in the program.
 
@@ -285,9 +285,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        self.srem.addConfig(self.__labelledConfigToIndexed(config))
+        self.srem.add_config(self.__labelled_config_to_indexed(config))
 
-    def getUnstables(self):
+    def get_unstables(self):
         r"""
         Gets a list of the unstable vertices.
 
@@ -305,9 +305,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        return self.__indexedVerticesToLabelled(self.srem.getUnstables())
+        return self.__indexed_vertices_to_labelled(self.srem.get_unstables())
 
-    def getNumUnstables(self):
+    def get_num_unstables(self):
         r"""
         Returns the number of unstable vertices.
 
@@ -326,9 +326,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        return self.__indexedVerticesToLabelled(self.srem.getUnstables())
+        return self.__indexed_vertices_to_labelled(self.srem.get_unstables())
 
-    def isSink(self, vert):
+    def is_sink(self, vert):
         r"""
         Tells whether or the indicated vertex is a sink.
 
@@ -342,9 +342,9 @@ class SageRemote:
 
         EXAMPLES::
         """ 
-        return self.srem.isSink(self.labelsToIndices[vert])
+        return self.srem.is_sink(self.labels_to_indices[vert])
 
-    def getSinks(self):
+    def get_sinks(self):
         r"""
         Returns a list of all the sinks.
 
@@ -358,9 +358,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        return self.__indexedVerticesToLabelled(self.srem.getSinks())
+        return self.__indexed_vertices_to_labelled(self.srem.get_sinks())
 
-    def getNonsinks(self):
+    def get_nonsinks(self):
         r"""
         Returns a list of all the sinks.
 
@@ -374,9 +374,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        return self.__indexedVerticesToLabelled(self.srem.getSinks())
+        return self.__indexed_vertices_to_labelled(self.srem.get_sinks())
 
-    def getSelected(self):
+    def get_selected(self):
         r"""
         Returns a list of all the vertices that are currently
           selected in the program.
@@ -391,9 +391,9 @@ class SageRemote:
 
         EXAMPLES::
         """
-        return self.__indexedVerticesToLabelled(self.srem.getSelected())
+        return self.__indexed_vertices_to_labelled(self.srem.get_selected())
 
-    def getConfigNamed(self, name):
+    def get_config_named(self, name):
         r"""
         Returns the configuration store in the config manager of
           the program with under the given name.
@@ -414,9 +414,9 @@ class SageRemote:
         EXAMPLES::
         """
 
-        return self.__indexedConfigToLabelled(self.srem.getConfigNamed(name))
+        return self.__indexed_config_to_labelled(self.srem.get_config_named(name))
     
-    def setToMaxStable(self):
+    def set_to_max_stable(self):
         r"""
         Sets the current configuration to the max stable configuration.
 
@@ -430,18 +430,18 @@ class SageRemote:
 
         EXAMPLES::
 
-            >>> srem.setToMaxStable()
+            >>> srem.set_to_max_stable()
         """
 
-        self.srem.setToMaxStable()
+        self.srem.set_to_max_stable()
 
-    def addMaxStable(self):
-        self.srem.addMaxStable()
+    def add_max_stable(self):
+        self.srem.add_max_stable()
 
-    def getMaxStable(self):
-        return self.__indexedConfigToLabelled(self.srem.getMaxStable())
+    def get_max_stable(self):
+        return self.__indexed_config_to_labelled(self.srem.get_max_stable())
 
-    def setToIdentity(self):
+    def set_to_identity(self):
         r"""
         Sets the current configuration to the identity configuration.
 
@@ -462,13 +462,13 @@ class SageRemote:
 
         EXAMPLES::
 
-            >>> srem.setToIdentity()
+            >>> srem.set_to_identity()
         """
-        self.srem.setToIdentity()
+        self.srem.set_to_identity()
 
-    def addIdentity(self):
+    def add_identity(self):
         r"""
-        Adds the identity configuration to the current configurationXS.
+        Adds the identity configuration to the current configuration_x_s.
 
         INPUT:
 
@@ -487,14 +487,14 @@ class SageRemote:
 
         EXAMPLES::
 
-            >>> srem.addIdentity()
+            >>> srem.add_identity()
         """
-        self.srem.addIdentity()
+        self.srem.add_identity()
 
-    def getIdentity(self):
-        return self.__indexedConfigToLabelled(self.srem.getIdentity())
+    def get_identity(self):
+        return self.__indexed_config_to_labelled(self.srem.get_identity())
 
-    def setToBurning(self):
+    def set_to_burning(self):
         r"""
         Sets the current configuration to the minimal burning
           configuration.
@@ -509,44 +509,44 @@ class SageRemote:
 
         EXAMPLES::
 
-            >>> srem.setToBurning()
+            >>> srem.set_to_burning()
         """
-        self.srem.setToBurning()
+        self.srem.set_to_burning()
 
-    def addBurning(self):
-        self.srem.addBurning()
+    def add_burning(self):
+        self.srem.add_burning()
 
-    def getBurning(self):
-        return self.__indexedConfigToLabelled(self.srem.getBurning())
+    def get_burning(self):
+        return self.__indexed_config_to_labelled(self.srem.get_burning())
 
-    def setToDual(self):
-        self.srem.setToDual()
+    def set_to_dual(self):
+        self.srem.set_to_dual()
 
-    def addDual(self):
-        self.srem.addDual()
+    def add_dual(self):
+        self.srem.add_dual()
 
-    def getDual(self):
-        return self.__indexedConfigToLabelled(self.srem.getDual())
+    def get_dual(self):
+        return self.__indexed_config_to_labelled(self.srem.get_dual())
 
 
-    def __labelledConfigToIndexed(self, config):
-        newConfig = [0]*len(self.indicesToLabels)
+    def __labelled_config_to_indexed(self, config):
+        new_config = [0]*len(self.indices_to_labels)
         for v in config:
-            if v != self.sinkLabel:
-                newConfig[self.labelsToIndices[v]]=config[v]
-        return newConfig
+            if v != self.sink_label:
+                new_config[self.labels_to_indices[v]]=config[v]
+        return new_config
 
-    def __indexedConfigToLabelled(self, config):
-        newConfig  = dict()
+    def __indexed_config_to_labelled(self, config):
+        new_config  = dict()
         for v in config:
-            if self.indicesToLabels[v]!=self.sinkLabel:
-                newConfig[self.indicesToLabels[v]] = config[v]
-        return newConfig
+            if self.indices_to_labels[v]!=self.sink_label:
+                new_config[self.indices_to_labels[v]] = config[v]
+        return new_config
 
-    def __labelledVerticesToIndexed(self, vertices):
-        return map(lambda v : self.labelsToIndices[v], vertices)
+    def __labelled_vertices_to_indexed(self, vertices):
+        return map(lambda v : self.labels_to_indices[v], vertices)
     
-    def __indexedVerticesToLabelled(self, vertices):
-        return filter( lambda v : v!=self.sinkLabel, map(lambda v : self.indicesToLabels[v], vertices))
+    def __indexed_vertices_to_labelled(self, vertices):
+        return filter( lambda v : v!=self.sink_label, map(lambda v : self.indices_to_labels[v], vertices))
 
     
