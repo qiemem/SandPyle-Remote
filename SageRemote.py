@@ -166,21 +166,27 @@ class SageRemote:
 
         """
         self.sinkLabel = sinkLabel
-        if graph.get_pos() is None:
-            graph.plot(save_pos=True)
+        posDict = graph.get_pos()
+        if posDict is None:
+            sinklessGraph = deepcopy(graph)
+            sinklessGraph.delete_vertex(sinkLabel)
+            sinklessGraph.plot(save_pos=True)
+            posDict = sinklessGraph.get_pos()
+            posDict[sinkLabel]=offset
         self.labelsToIndices = dict()
         self.indicesToLabels = list()
         vertexPositions = list()
         for v in graph.vertices():
             self.labelsToIndices[v] = len(self.indicesToLabels)
             self.indicesToLabels.append(v)
-            pos = graph.get_pos()[v]
+            pos = posDict[v]
             vertexPositions.append([scale * pos[0] + offset[0], scale*pos[1] + offset[1]])
         self.srem.deleteGraph()
         self.srem.addVertices(vertexPositions)
         edges = list()
         for e in graph.edges():
-            edges.append([self.labelsToIndices[e[0]], self.labelsToIndices[e[1]], e[2]])
+            if e[0]!=self.sinkLabel:
+                edges.append([self.labelsToIndices[e[0]], self.labelsToIndices[e[1]], e[2]])
         self.srem.addEdges(edges)
             
 

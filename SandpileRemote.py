@@ -1038,12 +1038,12 @@ class SandpileRemote:
         """
 
         self.send("set_to_max_stable")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def addMaxStable(self):
         self.send("add_max_stable")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def getMaxStable(self):
@@ -1074,7 +1074,7 @@ class SandpileRemote:
             >>> srem.setToIdentity()
         """
         self.send("set_to_identity")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def addIdentity(self):
@@ -1101,7 +1101,7 @@ class SandpileRemote:
             >>> srem.addIdentity()
         """
         self.send("add_identity")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def getIdentity(self):
@@ -1126,12 +1126,12 @@ class SandpileRemote:
             >>> srem.setToBurning()
         """
         self.send("set_to_burning")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def addBurning(self):
         self.send("add_burning")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def getBurning(self):
@@ -1140,12 +1140,12 @@ class SandpileRemote:
 
     def setToDual(self):
         self.send("set_to_dual")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def addDual(self):
         self.send("add_dual")
-        self.__checkResult()
+        self.__checkResult(self.receive())
         self.__tryRepaint()
 
     def getDual(self):
