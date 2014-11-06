@@ -14,7 +14,7 @@ After the Sandpiles program is running, hit the "Server" button and press yes.
 Then, from a Python terminal, we can create an instance of the SandileRemote class
 and connect to the program:
 
-    >>> srem = SandpileRemove()
+    >>> srem = SandpileRemote()
     >>> srem.connect()
 
 The Sandpile program will inform you of the connection.
